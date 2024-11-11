@@ -1,4 +1,4 @@
-use core::panic;
+use std::process::exit;
 
 use chrono::{DateTime, Local, Utc};
 use clap::Parser;
@@ -51,49 +51,64 @@ struct Args {
     /// Enable verbose output for more detailed information
     #[arg(long, short, default_value_t = false, verbatim_doc_comment)]
     verbose: bool,
+
+    /// Format string for datetime output
+    #[arg(long, short, verbatim_doc_comment)]
+    format: Option<String>,
 }
 
 fn main() {
     let args = Args::parse();
 
+    let output_format = args.format;
+
     let operand = match &args.datetime {
         Some(val) => match parse_datetime(val) {
             Ok(res) => res,
-            Err(_) => panic!("Could not parse first operand: {}", val),
+            Err(_) => output_err("Could not parse datetime"),
         },
         _ => Utc::now(),
     };
 
     let op = match &args.op {
         Some(val) if val == "+" || val == "-" => val,
-        Some(val) => panic!("Invalid operator: '{}'", val),
+        Some(_) => output_err("Invalid operator"),
         _ => "none",
     };
 
     if op == "none" {
-        output(operand);
-        return;
+        output(operand, output_format);
     }
 
     let duration = match &args.duration {
         Some(val) => match parse_duration(val) {
             Ok(res) => res,
-            Err(_) => panic!("Could not parse second operand: {}", val),
+            Err(_) => output_err("Could not parse duration"),
         },
-        _ => panic!("Found an operator '{}' but no second operand was given", op),
+        _ => output_err("Found an operator but no duration was given"),
     };
 
     let result = match op {
         "+" => operand + duration,
         "-" => operand - duration,
-        _ => panic!("Invalid operator: {}", op),
+        _ => output_err("Invalid operator"),
     };
 
-    output(result);
+    output(result, output_format);
 }
 
-fn output(datetime: DateTime<Utc>) {
+fn output(datetime: DateTime<Utc>, fmt: Option<String>) -> ! {
     let local = Local::now().timezone();
     let tz_datetime = datetime.with_timezone(&local);
-    println!("{tz_datetime}");
+
+    match fmt {
+        Some(s) => println!("{}", tz_datetime.format(&s)),
+        None => println!("{tz_datetime}"),
+    }
+    exit(0)
+}
+
+fn output_err(err: &str) -> ! {
+    eprintln!("{err}");
+    exit(1);
 }
