@@ -1,11 +1,17 @@
 # DT
 
-A tool to add or subtract specific durations (weeks, days, hours, minutes, seconds) from a given datetime.
+A cli tool to add or subtract specific durations (weeks, days, hours, minutes, seconds) from a given datetime.
 
 ## Usage
 
 ```sh
 dt [OPTIONS] [DATETIME] [OP] [DURATION]
+```
+
+```sh
+# Example usage with date
+$ dt "$(date -Ins)" + 31d
+-> 2024-12-12 20:21:39.019227081 +01:00
 ```
 
 ### Arguments
